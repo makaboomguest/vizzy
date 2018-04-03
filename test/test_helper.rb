@@ -76,7 +76,7 @@ class ActiveSupport::TestCase
   def clear_database
     # clear the database with the current schema
     system("rails db:environment:set RAILS_ENV=#{ENV['RAILS_ENV']}")
-    system('rake db:schema:load')
+    system('rake db:schema:load --trace')
   end
 
   def run_test_build(build_ref)
