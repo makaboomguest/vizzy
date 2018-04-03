@@ -13,6 +13,7 @@ services:
       - RAILS_MASTER_KEY=$RAILS_MASTER_KEY
       - POSTGRES_USER=postgres
       - RAILS_ENV=ci_test
+      - HEADLESS=yes
     volumes:
       - .:/app
     ports:
