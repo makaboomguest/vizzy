@@ -2,6 +2,8 @@ version: '3'
 services:
   postgres:
     image: postgres:9.5.3
+    volumes:
+      - data:/var/lib/postgresql/data
   app:
     image: $DOCKER_USERNAME/vizzy:$TRAVIS_COMMIT
     build:
@@ -20,3 +22,6 @@ services:
       - 3000:3000
     depends_on:
       - postgres
+volumes:
+  data:
+    external: true
