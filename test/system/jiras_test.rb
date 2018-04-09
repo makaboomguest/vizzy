@@ -5,7 +5,7 @@ class JirasTest < ApplicationSystemTestCase
   test "create jira from diff" do
     initialize_build_test
 
-    run_test_build('develop_1')
+    run_test_build('branch_build_1')
     run_test_build('pull_request_2')
     visit_last_created_build
     open_first_unapproved_diff

@@ -425,7 +425,7 @@ def create_command
       options.file = file
     end
 
-    opts.on('--pull-request PR_NUMBER', 'Pull request number to associate with this build. If not supplied build is treated as a "develop" build.') do |prNum|
+    opts.on('--pull-request PR_NUMBER', 'Pull request number to associate with this build. If not supplied build is treated as a "branch" build.') do |prNum|
       options.pull_request_number = prNum
     end
 
@@ -481,14 +481,14 @@ end
 def print_build_summary(id, result)
   new_test_count = result['new_tests_count']
   unapproved_diffs_count = result['unapproved_diffs_count']
-  missing_tests_count = result['missing_tests_count']
+  removed_tests_count = result['removed_tests_count']
   successful_tests_count = result['successful_test_count']
 
   puts "-------------"
   puts "Build Summary"
   puts "-------------"
   puts "New Tests: #{new_test_count}"
-  puts "Missing Tests: #{missing_tests_count}"
+  puts "Removed Tests: #{removed_tests_count}"
   puts "Successful Tests: #{successful_tests_count}"
   puts "Unapproved Diffs: #{unapproved_diffs_count}"
   print_vizzy_link(id)

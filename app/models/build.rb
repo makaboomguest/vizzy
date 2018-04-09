@@ -12,19 +12,62 @@ class Build < ActiveRecord::Base
   acts_as_commontable
 
   def new_tests
-    test_images.where(build_id: id).where(image_created_this_build: true)
+    diffs = new_test_diffs
+    return [] if diffs.blank?
+    new_test_diffs.map { |diff| diff.new_image }
   end
 
-  def missing_tests
+  def unapproved_new_tests
+    diffs = new_test_diffs
+    return [] if diffs.blank?
+    diffs.select { |diff| !diff.approved? }.map { |diff| diff.new_image }
+  end
+
+  def approved_new_tests
+    diffs = new_test_diffs
+    return [] if diffs.blank?
+    diffs.select { |diff| diff.approved? }.map { |diff| diff.new_image }
+  end
+
+  def removed_tests
     get_base_images_not_uploaded
   end
 
+  def approved_removed_tests
+    diffs = approved_diffs
+    return [] if diffs.blank?
+    diffs.select { |diff| diff.new_image.is_blank_image? }.map { |diff| diff.old_image }
+  end
+
+  def unapproved_removed_tests
+    diffs = unapproved_diffs
+    return [] if diffs.blank?
+    diffs.select { |diff| diff.new_image.is_blank_image? }.map { |diff| diff.old_image }
+  end
+
   def approved_diffs
-    diffs.where(build_id: id).where(approved: true)
+    diffs.where(approved: true)
   end
 
   def unapproved_diffs
-    diffs.where(build_id: id).where(approved: false)
+    diffs.where(approved: false)
+  end
+
+  def diffs_excluding_new_or_removed_tests
+    return [] if self.diffs.blank?
+    remove_new_and_removed_diffs(self.diffs)
+  end
+
+  def unapproved_diffs_excluding_new_or_removed_tests
+    diffs = unapproved_diffs
+    return [] if diffs.blank?
+    remove_new_and_removed_diffs(diffs)
+  end
+
+  def approved_diffs_excluding_new_or_removed_tests
+    diffs = approved_diffs
+    return [] if diffs.blank?
+    remove_new_and_removed_diffs(diffs)
   end
 
   def vizzy_build_url
@@ -32,7 +75,7 @@ class Build < ActiveRecord::Base
   end
 
   def get_base_images_not_uploaded
-    return [] if self.temporary? || self.full_list_of_image_md5s.nil?
+    return [] if self.full_list_of_image_md5s.nil?
     self.base_images.where.not(test_key: self.full_list_of_image_md5s.keys)
   end
 
@@ -164,6 +207,12 @@ class Build < ActiveRecord::Base
     self.pull_request_number == '-1'
   end
 
+  # Pull Request Number is a string
+  # @return true if pull request, false if not a pull request
+  def is_pull_request_build
+    self.pull_request_number != '-1'
+  end
+
   def formatted_created_at_time
     self.created_at.strftime('%b %d, %Y %I:%M:%S %P ')
   end
@@ -178,5 +227,18 @@ class Build < ActiveRecord::Base
 
   def can_approve_images
     !self.temporary? && !self.dev_build?
+  end
+
+  private
+  def remove_new_and_removed_diffs(diffs)
+    diffs.select do |diff|
+      new_test = diff&.old_image&.is_blank_image?
+      removed_test = diff&.new_image&.is_blank_image?
+      !new_test && !removed_test
+    end
+  end
+
+  def new_test_diffs
+    diffs.select {|diff| diff&.old_image&.is_blank_image}
   end
 end

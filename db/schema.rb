@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180326171851) do
+ActiveRecord::Schema.define(version: 20180409180757) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -151,6 +151,7 @@ ActiveRecord::Schema.define(version: 20180326171851) do
     t.string "image_pull_request_number"
     t.string "md5"
     t.string "test_key"
+    t.boolean "is_blank_image", default: false
     t.index ["build_id"], name: "index_test_images_on_build_id"
     t.index ["test_id"], name: "index_test_images_on_test_id"
   end
@@ -167,6 +168,7 @@ ActiveRecord::Schema.define(version: 20180326171851) do
     t.string "ancestry"
     t.string "ancestry_key"
     t.integer "project_id"
+    t.boolean "has_base_image", default: false
     t.index ["ancestry"], name: "index_tests_on_ancestry"
     t.index ["project_id"], name: "index_tests_on_project_id"
   end

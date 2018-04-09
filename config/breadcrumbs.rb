@@ -71,8 +71,8 @@ crumb :user do |user|
   parent :users
 end
 
-crumb :missing_tests do |build|
-  link 'Missing Tests', builds_path(build)
+crumb :unapproved_removed_tests do |build|
+  link 'Removed Tests', builds_path(build)
   parent build
 end
 

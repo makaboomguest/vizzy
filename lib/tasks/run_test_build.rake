@@ -9,21 +9,20 @@ def run_build(params, args)
 end
 
 namespace :run_test_build do
-############## BUILD DEVELOPS ##############
+############## BRANCH BUILDS ##############
 
-  desc 'run a ruby script'
-  task :develop_1, [:host_with_port, :git_sha] => [:environment] do |_, args|
-    puts 'running develop 1...'
+  task :branch_build_1, [:host_with_port, :git_sha] => [:environment] do |_, args|
+    puts 'running branch build 1 ...'
     run_build('1 1', args)
   end
 
-  task :develop_2, [:host_with_port, :git_sha] => [:environment] do |_, args|
-    puts 'running develop 2...'
+  task :branch_build_2, [:host_with_port, :git_sha] => [:environment] do |_, args|
+    puts 'running branch build 2...'
     run_build('2 1', args)
   end
 
-  task :develop_3, [:host_with_port, :git_sha] => [:environment] do |_, args|
-    puts 'running develop 3...'
+  task :branch_build_3, [:host_with_port, :git_sha] => [:environment] do |_, args|
+    puts 'running branch build 3...'
     run_build('3 1', args)
   end
 

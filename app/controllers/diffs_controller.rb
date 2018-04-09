@@ -102,7 +102,7 @@ class DiffsController < ApplicationController
     redirect_to build_path(@diff.build)
   end
 
-  # Build Develop Build Only - Special case method for when multiple developers make changes on the same image, view with multiple diffs shows and they are allowed to
+  # Branch Build Only - Special case method for when multiple developers make changes on the same image, view with multiple diffs shows and they are allowed to
   # approve either one of the old images
   def multiple_diff_approval
     if @diff.build.temporary?

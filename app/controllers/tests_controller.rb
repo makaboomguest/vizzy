@@ -21,7 +21,6 @@ class TestsController < ApplicationController
   def edit
   end
 
-  # To remove the base image, just mark it as not approved. All base images have to be approved by definition
   def remove_base_images
     @test.test_images.each { |image| image.remove_image_from_base_images }
     redirect_to @test, notice: 'Base Image was successfully removed.'

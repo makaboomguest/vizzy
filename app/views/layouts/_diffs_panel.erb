@@ -24,7 +24,7 @@
         </tr>
         </thead>
         <tbody>
-        <% diffs.includes(:old_image, :new_image).find_each(batch_size: 200) do |diff| %>
+        <% diffs.each do |diff| %>
           <tr>
             <% if diff.old_image && diff.new_image %>
               <td><%= link_to image_tag(diff.differences.url(:thumbnail)), diff_path(diff) %></td>

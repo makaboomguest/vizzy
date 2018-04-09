@@ -91,10 +91,10 @@ class ActiveSupport::TestCase
     Rake.application[rake_task].invoke(uri_with_port, pull_request_preapproval_git_sha, pull_request_number)
   end
 
-  def run_preapproval_develop(build_ref)
+  def run_preapproval_branch_build(build_ref)
     rake_task, uri_with_port = get_build_params_and_reenable_rake_task(build_ref)
-    develop_most_recent_sha = github_recent_commits.first
-    Rake.application[rake_task].invoke(uri_with_port, develop_most_recent_sha)
+    branch_build_most_recent_sha = github_recent_commits.first
+    Rake.application[rake_task].invoke(uri_with_port, branch_build_most_recent_sha)
   end
 
   def visit_last_created_build
@@ -116,35 +116,51 @@ class ActiveSupport::TestCase
   end
 
   def assert_successful_tests(number)
-    page.must_have_content("#{number} successful test(s)")
+    page.must_have_content("#{number} successful #{'test'.pluralize(number)}")
   end
 
-  def assert_images_checked(number)
-    page.must_have_content("#{number} images checked")
+  def assert_images_uploaded(number)
+    page.must_have_content("#{number} #{'image'.pluralize(number)} uploaded")
   end
 
-  def assert_differences_found(number)
-    page.must_have_content("#{number} difference(s) found")
+  def assert_differences(number)
+    page.must_have_content("#{number} #{'difference'.pluralize(number)}")
   end
 
   def assert_new_tests(number)
-    page.must_have_content("#{number} new test(s) added")
+    page.must_have_content("#{number} new #{'test'.pluralize(number)}")
   end
 
-  def assert_missing_tests(number)
-    page.must_have_content("#{number} missing test(s)")
+  def assert_removed_tests(number)
+    page.must_have_content("#{number} removed #{'test'.pluralize(number)}")
   end
 
   def assert_no_visual_differences_found
     page.must_have_content 'No visual differences were found between this build and the base images.'
   end
 
+  def assert_removed_tests_waiting_for_approval(number)
+    page.must_have_content("#{number} #{'removed test'.pluralize(number)} waiting for approval")
+  end
+
+  def assert_removed_tests_approved(number)
+    page.must_have_content("#{number} #{'removed test'.pluralize(number)} approved")
+  end
+
+  def assert_new_tests_waiting_for_approval(number)
+    page.must_have_content("#{number} #{'new test'.pluralize(number)} waiting for approval")
+  end
+
+  def assert_new_tests_approved(number)
+    page.must_have_content("#{number} #{'new test'.pluralize(number)} approved")
+  end
+
   def assert_diffs_waiting_for_approval(number)
-    page.must_have_content("#{number} diffs waiting for approval")
+    page.must_have_content("#{number} #{'diff'.pluralize(number)} waiting for approval")
   end
 
   def assert_diffs_approved(number)
-    page.must_have_content("#{number} diffs approved")
+    page.must_have_content("#{number} #{'diff'.pluralize(number)} approved")
   end
 
   def open_first_unapproved_diff
@@ -157,7 +173,7 @@ class ActiveSupport::TestCase
     click_button('Approve New Image')
   end
 
-  def approve_all_diffs
+  def approve_all
     click_button('Approve All Images')
   end
 

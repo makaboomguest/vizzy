@@ -18,10 +18,7 @@ Rails.application.routes.draw do
 
   resources :builds do
     member do
-      get 'unapproved_diffs'
-      get 'approved_diffs'
-      get 'new_tests'
-      get 'missing_tests'
+      get 'removed_tests'
       get 'successful_tests'
       post 'approve_all_images'
       post 'add_md5s'

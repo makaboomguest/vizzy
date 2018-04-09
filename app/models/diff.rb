@@ -8,7 +8,7 @@ class Diff < ActiveRecord::Base
   validates_attachment :differences, content_type: {content_type: ["image/jpg", "image/jpeg", "image/png", "image/gif"]}
 
   def approve(current_user)
-    if self.build.pull_request_number != '-1'
+    if self.build.is_pull_request_build
       # This is the preapproved pull request case, don't approve the image, just store the commit_sha with the
       # associated new image
       # Add sha and pull request number to the image
@@ -17,10 +17,20 @@ class Diff < ActiveRecord::Base
       # This should rarely happen, but in the case of a diff in the branch build plan, allow a user to approve the
       # image immediately
       self.new_image.approved = true
-      cleanup_related_diffs current_user, true
+
+      # TODO: Fix this
+      if self.new_image.is_blank_image?
+        self.new_image.test.has_base_image = false
+        self.new_image.test.save
+      elsif self.old_image.is_blank_image?
+        self.old_image.test.has_base_image = true
+        self.old_image.test.save
+      end
+
+      cleanup_related_diffs(current_user, true)
     end
 
-    # Mark diff that an action has been taken, so it is listed in the "Images approved with this build" section
+    # Mark diff that an action has been taken, so it is listed in the "Approved Images" section
     self.new_image.user_approved_this_build = true
     self.new_image.save
     self.approved_by = current_user
@@ -30,16 +40,19 @@ class Diff < ActiveRecord::Base
 
   # Unapprove a given diff, used for if a mistake was made. Only available if the image had previously been approved
   def unapprove
-    if self.build.pull_request_number != '-1'
+    self.new_image.user_approved_this_build = false
+
+    if self.build.is_pull_request_build
       # Clear sha and pull request number
       self.new_image.clear_preapproval_information(false)
+      self.new_image.save
     else
       self.new_image.approved = false
+      self.new_image.save # needs to be called before base image check
+      self.new_image.unmark_test_if_no_base_image
     end
 
     # Clear fields that mark diff that an action has been taken, so it is listed in the "Diffs waiting for approval" section
-    self.new_image.user_approved_this_build = false
-    self.new_image.save
     self.approved_by = nil
     self.approved = false
     self.save
@@ -65,17 +78,15 @@ class Diff < ActiveRecord::Base
   # Branch Build Only - Special case method for when multiple developers make changes on the same image, view with multiple diffs shows and they are allowed to
   # approve either one of the old images
   def approve_old_image(current_user)
-    logger.info "Clicked approve old image on diff: #{diff.id}"
-
-    # Approved image should be marked back to 1 associated image because the user just took action and ruled the other images out
     self.old_image.approved = true
     self.old_image.save
+    self.old_image.mark_test_has_base_image
 
     self.approved = true
     self.approved_by = current_user
     self.save
 
-    cleanup_related_diffs current_user, false
+    cleanup_related_diffs(current_user, false)
   end
 
   def approved_by_username

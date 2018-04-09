@@ -32,10 +32,26 @@ class TestImage < ActiveRecord::Base
     self.test_key = self.test.ancestry_key
   end
 
+  # Update the has_base_image test flag if its not already true
+  def mark_test_has_base_image
+    unless self.test.has_base_image
+      self.test.has_base_image = true
+      self.test.save
+    end
+  end
+
+  def unmark_test_if_no_base_image
+    if self.test.current_base_image.nil?
+      self.test.has_base_image = false
+      self.test.save
+    end
+  end
+
   def remove_image_from_base_images
     self.approved = false
     self.clear_preapproval_information(false)
     self.save
+    unmark_test_if_no_base_image
   end
 
   # Preapproved status only depends on the image_pull_request_sha being present

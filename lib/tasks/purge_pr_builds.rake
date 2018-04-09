@@ -6,8 +6,7 @@ namespace :orphaned_pr_builds do
 
     non_temporary_pull_requests_older_than_30_days.find_each(batch_size: 500) do |build|
       no_approved_diffs = build.diffs.where(approved: true).size == 0
-      no_new_tests = build.new_tests.size == 0
-      if no_approved_diffs && no_new_tests
+      if no_approved_diffs
         puts "Deleting build with id: #{build.id}"
         builds_destroyed += 1
         build.destroy unless @dry_run

@@ -4,19 +4,19 @@ class Project < ActiveRecord::Base
   store_accessor :plugin_settings
 
   def github_repo_url
-    if self.github_root_url.blank? || self.github_repo.blank?
-      nil
-    else
-      self.github_root_url + '/' + self.github_repo
-    end
+    (self.github_root_url.blank? || self.github_repo.blank?) ? nil : "#{self.github_root_url}/#{self.github_repo}"
+  end
+
+  def update_vizzy_url_if_necessary(request_url)
+    return if self.vizzy_server_url == request_url
+    self.vizzy_server_url = request_url
+    self.save
   end
 
   def calculate_base_images
     images = []
-    if self.builds.size == 0
-      return images
-    end
-    self.tests.find_each do |test|
+    return images if self.builds.size == 0
+    tests_with_base_images.find_each do |test|
       image = test.current_base_image
       images.push(image) unless image.nil?
     end
@@ -53,6 +53,10 @@ class Project < ActiveRecord::Base
 
   def tests
     Test.where(project_id: self)
+  end
+
+  def tests_with_base_images
+    self.tests.where(has_base_image: true)
   end
 
   def uncommitted_builds

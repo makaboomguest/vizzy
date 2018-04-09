@@ -15,7 +15,7 @@ class ProjectsTest < ApplicationSystemTestCase
     create_project
     assert page.must_have_content('Project was successfully created.')
 
-    run_test_build('develop_1')
+    run_test_build('branch_build_1')
     run_test_build('pull_request_2')
     visit project_path(1)
 

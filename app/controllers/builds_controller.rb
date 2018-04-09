@@ -1,6 +1,6 @@
 require 'digest/md5'
 class BuildsController < ApplicationController
-  before_action :set_build, only: [:show, :edit, :update, :destroy, :unapproved_diffs, :approved_diffs, :approve_all_images, :new_tests, :missing_tests, :add_md5s, :commit, :successful_tests, :fail]
+  before_action :set_build, only: [:show, :edit, :update, :destroy, :unapproved_diffs, :approved_diffs, :approve_all_images, :new_tests, :removed_tests, :add_md5s, :commit, :successful_tests, :fail]
   skip_before_action :verify_authenticity_token, only: [:create, :add_md5s, :fail, :commit], if: :json_request?
 
   # GET /builds
@@ -32,7 +32,7 @@ class BuildsController < ApplicationController
       if @build.project.nil?
         raise "Project #{build_params[:project_id]} does not exist"
       end
-      update_vizzy_url_if_necessary(request.base_url)
+      @build.project.update_vizzy_url_if_necessary(request.base_url)
       @build.base_images = @build.project.calculate_base_images
       @build.fetch_github_information
       @build.update_dev_build_info
@@ -123,7 +123,7 @@ class BuildsController < ApplicationController
         if @build.temporary
           format.json { render json: { committed: false } }
         else
-          format.json {render json: {committed: true, successful_test_count: @build.successful_tests.size, missing_tests_count: @build.missing_tests.size, unapproved_diffs_count: @build.unapproved_diffs.size, new_tests_count: @build.new_tests.size}}
+          format.json {render json: {committed: true, successful_test_count: @build.successful_tests.size, removed_tests_count: @build.removed_tests.size, unapproved_diffs_count: @build.diffs_excluding_new_or_removed_tests.size, new_tests_count: @build.new_tests.size }}
         end
       end
     elsif request.post?
@@ -154,7 +154,7 @@ class BuildsController < ApplicationController
     @build.base_images.find_each(batch_size: 500) do |image|
       @build.image_md5s.delete_if do |key, value|
         # Delete the image if the md5, filename match and if there aren't preapprovals pending. If there are, the image needs to be
-        # uploaded because it could create diffs -- see handle_pull_request_preapproval_case in test_images_controller
+        # uploaded because it could create diffs
         preapprovals = preapproved_images[image.test_key]
         if found_matching_md5_and_filename(key, value, image) && preapprovals.blank?
           @build.successful_tests.push(image)
@@ -165,9 +165,16 @@ class BuildsController < ApplicationController
     end
   end
 
-  # key and value of test image and base image is passed, returns true if they are a match
   def found_matching_md5_and_filename(key, value, image)
-    !key.nil? && !value.nil? && !image.nil? && !image.md5.nil? && value.chomp == image.md5.chomp && key.chomp == image.test_key.chomp
+    chomped_key = key&.chomp
+    chomped_test_key = image&.test_key&.chomp
+    return false if chomped_key != chomped_test_key
+
+    chomped_image_md5 = image&.md5&.chomp
+    chomped_value = value&.chomp
+    return false if chomped_value != chomped_image_md5
+
+    true
   end
 
   # PATCH/PUT /builds/1
@@ -200,7 +207,6 @@ class BuildsController < ApplicationController
     else
       @unapproved_diffs.each do |diff|
         diff.approve(current_user)
-        diff.save
       end
 
       @build.update_github_commit_status
@@ -209,24 +215,10 @@ class BuildsController < ApplicationController
     end
   end
 
-  def unapproved_diffs
-    @diffs = @unapproved_diffs
-    render 'diffs/index'
-  end
 
-  def approved_diffs
-    @diffs = @approved_diffs
-    render 'diffs/index'
-  end
-
-  def new_tests
-    @test_images = @new_tests
-    render 'test_images/index'
-  end
-
-  def missing_tests
-    @test_images = @missing_tests
-    render 'test_images/missing_tests'
+  def removed_tests
+    @test_images = @build.get_base_images_not_uploaded
+    render 'test_images/removed_tests'
   end
 
   def successful_tests
@@ -234,14 +226,11 @@ class BuildsController < ApplicationController
     render 'test_images/successful_tests'
   end
 
-  private
-  def update_vizzy_url_if_necessary(request_url)
-    if @build.project.vizzy_server_url != request_url
-      @build.project.vizzy_server_url = request_url
-      @build.project.save
-    end
+  def total_new_tests
+    @approved_new_tests.size + @unapproved_new_tests.size
   end
 
+  private
   def ensure_test_exists(ancestry_key)
     Test.create_or_find(@build.project_id, ancestry_key)
   end
@@ -249,10 +238,18 @@ class BuildsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_build
     @build = Build.find(params[:id])
-    @unapproved_diffs = @build.unapproved_diffs
     @approved_diffs = @build.approved_diffs
-    @new_tests = @build.new_tests
-    @missing_tests = @build.missing_tests
+    @unapproved_diffs = @build.unapproved_diffs
+
+    @approved_new_tests = @build.approved_new_tests
+    @unapproved_new_tests = @build.unapproved_new_tests
+
+    @approved_removed_tests = @build.approved_removed_tests
+    @unapproved_removed_tests = @build.unapproved_removed_tests
+
+    @approved_diffs_excluding_new_or_removed_tests = @build.approved_diffs_excluding_new_or_removed_tests
+    @unapproved_diffs_excluding_new_or_removed_tests = @build.unapproved_diffs_excluding_new_or_removed_tests
+
     @successful_tests = @build.successful_tests
   end
 

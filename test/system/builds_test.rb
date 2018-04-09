@@ -5,20 +5,20 @@ class BuildsTest < ApplicationSystemTestCase
   test 'develop 1, pr 1 should cause no diffs' do
     initialize_build_test
 
-    run_test_build('develop_1')
+    run_test_build('branch_build_1')
 
     visit_last_created_build
-    assert_images_checked(7)
-    assert_differences_found(0)
+    assert_images_uploaded(7)
+    assert_differences(0)
     assert_new_tests(7)
-    assert_no_visual_differences_found
+    assert_new_tests_waiting_for_approval(7)
+    approve_all
 
     run_test_build('pull_request_1')
 
     visit_last_created_build
-    take_screenshot
-    assert_images_checked(7)
-    assert_differences_found(0)
+    assert_images_uploaded(7)
+    assert_differences(0)
     assert_new_tests(0)
     assert_successful_tests(7)
   end
@@ -26,13 +26,17 @@ class BuildsTest < ApplicationSystemTestCase
   test 'develop 1, pr 2, pr 2, pr 3 should cause diffs' do
     initialize_build_test
 
-    run_test_build('develop_1')
+    run_test_build('branch_build_1')
+    visit_last_created_build
+    approve_all
+
     run_test_build('pull_request_2')
 
     visit_last_created_build
-    assert_images_checked(7)
-    assert_differences_found(7)
+    assert_images_uploaded(7)
+    assert_differences(7)
     assert_new_tests(0)
+    assert_diffs_waiting_for_approval(7)
 
     open_first_unapproved_diff
     assert_diffs_page_has_all_content
@@ -55,8 +59,8 @@ class BuildsTest < ApplicationSystemTestCase
     # Assert that running the same pr build again gives same state as you left it
     run_test_build('pull_request_2')
     visit_last_created_build
-    assert_images_checked(7)
-    assert_differences_found(7)
+    assert_images_uploaded(7)
+    assert_differences(7)
     assert_new_tests(0)
     assert_diffs_approved(3)
     assert_diffs_waiting_for_approval(4)
@@ -65,28 +69,32 @@ class BuildsTest < ApplicationSystemTestCase
     # Note that it only uploads 6 images instead of 7
     run_test_build('pull_request_3')
     visit_last_created_build
-    assert_images_checked(6)
-    assert_differences_found(6)
+    assert_images_uploaded(6)
+    assert_differences(6)
     assert_new_tests(0)
-    assert_missing_tests(1)
+    assert_removed_tests(1)
+    assert_diffs_waiting_for_approval(6)
+    assert_removed_tests_waiting_for_approval(1)
   end
 
   test 'develop 1, pr 2, develop 2 performs preapproval' do
     initialize_build_test
 
-    run_test_build('develop_1')
-    run_preapproval_pull_request('pull_request_2')
+    run_test_build('branch_build_1')
+    visit_last_created_build
+    approve_all
 
+    run_preapproval_pull_request('pull_request_2')
     visit_last_created_build
     open_first_unapproved_diff
     approve_current_diff
     approve_current_diff
     approve_current_diff
 
-    run_preapproval_develop('develop_2')
+    run_preapproval_branch_build('branch_build_2')
     visit_last_created_build
-    assert_images_checked(7)
-    assert_differences_found(4)
+    assert_images_uploaded(7)
+    assert_differences(4)
     assert_new_tests(0)
     assert_successful_tests(3)
     assert_diffs_waiting_for_approval(4)
@@ -94,20 +102,24 @@ class BuildsTest < ApplicationSystemTestCase
 
   test 'develop 1, pr 2, pr3, develop 2 performs multiple preapproval' do
     initialize_build_test
-    run_test_build('develop_1')
+    run_test_build('branch_build_1')
+    visit_last_created_build
+    approve_all
 
     run_preapproval_pull_request('pull_request_2')
     visit_last_created_build
-    approve_all_diffs
+    approve_all
 
     run_preapproval_pull_request('pull_request_3')
     visit_last_created_build
-    approve_all_diffs
+    approve_all
 
-    run_preapproval_develop('develop_2')
+    run_preapproval_branch_build('branch_build_2')
     visit_last_created_build
-    assert_images_checked(7)
-    assert_differences_found(12)
+
+    # TODO: Diff is being forced to show when images are the same
+    assert_images_uploaded(7)
+    assert_differences(12)
     assert_new_tests(0)
     assert_successful_tests(1)
     assert_diffs_waiting_for_approval(12)
@@ -123,10 +135,10 @@ class BuildsTest < ApplicationSystemTestCase
     approve_current_diff
     approve_current_diff
 
-    run_preapproval_develop('develop_2')
+    run_preapproval_branch_build('branch_build_2')
     visit_last_created_build
-    assert_images_checked(7)
-    assert_differences_found(8)
+    assert_images_uploaded(7)
+    assert_differences(8)
     assert_new_tests(0)
     assert_successful_tests(3)
     assert_diffs_waiting_for_approval(8)

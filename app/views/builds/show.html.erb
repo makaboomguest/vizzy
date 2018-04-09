@@ -34,7 +34,7 @@
       <%= @build.formatted_created_at_time %>
     </strong>
     <br>
-    <strong>Project: </strong><%= @build.project.name %>
+    <strong>Project: </strong><%= link_to @build.project.name, project_path(@build.project) %>
     <br>
     <% if !@build.is_branch_build && !@build.dev_build %>
       <div>
@@ -45,14 +45,16 @@
     <% if @build.commit_sha? %>
       <div><strong>Sha: </strong><%= @build.commit_sha %></div>
     <% end %>
-    <div><strong><%= @build.num_of_images_in_build %></strong> images checked</div>
-    <div><strong><%= @build.diffs.size %></strong> difference(s) found</div>
-    <div><strong><%= @new_tests.size %></strong> new test(s) added</div>
-    <% unless @missing_tests.blank? %>
-      <%= link_to "#{@missing_tests.size} missing test(s)", missing_tests_build_path, :class => 'alert-link link-danger' %>
+    <div><strong><%= @build.num_of_images_in_build %></strong> <%= 'image'.pluralize(@build.num_of_images_in_build) %> uploaded</div>
+    <div><strong><%= @build.diffs_excluding_new_or_removed_tests.size %></strong> <%= 'difference'.pluralize(@build.diffs_excluding_new_or_removed_tests.size) %></div>
+    <div><strong><%= @build.new_tests.size %></strong> new <%= 'test'.pluralize(@build.new_tests.size.size) %></div>
+    <% unless @build.removed_tests.blank? %>
+      <% removed_tests_size = @build.removed_tests.size %>
+      <%= link_to "#{removed_tests_size} removed #{'test'.pluralize(removed_tests_size)}", removed_tests_build_path, :class => 'alert-link link-danger' %>
     <% end %>
     <% unless @successful_tests.blank? %>
-      <%= link_to "#{@successful_tests.size} successful test(s)", successful_tests_build_path, :class => 'alert-link link-success' %>
+      <% successful_tests_size = @successful_tests.size %>
+      <%= link_to "#{successful_tests_size} successful #{'test'.pluralize(successful_tests_size)}", successful_tests_build_path, :class => 'alert-link link-success' %>
     <% end %>
   </div>
 </div>
@@ -73,8 +75,8 @@
   <% else %>
     <% link_text = 'Please look through them to approve them.' %>
   <% end %>
-  <div class="alert alert-danger">This build has <%= @unapproved_diffs.size %> unapproved visual
-    difference(s). <%= link_to link_text, diff_path(@unapproved_diffs.first), :class => 'alert-link' %></div>
+  <div class="alert alert-danger">This build has <%= @unapproved_diffs.size %> unapproved
+    <%= 'item'.pluralize(@unapproved_diffs.size) %>. <%= link_to link_text, diff_path(@unapproved_diffs.first), :class => 'alert-link' %></div>
 <% elsif @approved_diffs.size > 0 %>
   <div class="alert alert-success">All visual differences in this build have been approved. You can review what was
     changed below.
@@ -83,20 +85,32 @@
   <div class="alert alert-success">No visual differences were found between this build and the base images.</div>
 <% end %>
 
-<% if @unapproved_diffs.size > 0 %>
-  <% title_text = "#{pluralize(@unapproved_diffs.size, 'diff')}" %>
-  <% if !@build.dev_build? %>
+<% if @unapproved_diffs_excluding_new_or_removed_tests.size > 0 %>
+  <% title_text = "#{pluralize(@unapproved_diffs_excluding_new_or_removed_tests.size, 'diffs')}" %>
+  <% unless @build.dev_build? %>
     <% title_text += ' waiting for approval' %>
   <% end %>
-  <%= render partial: 'layouts/diffs_panel', locals: {title: title_text, diffs: @unapproved_diffs, show_approver: false, panel_class: "panel-warning", panel_id: "diffs_images"} %>
+  <%= render partial: 'layouts/diffs_panel', locals: {title: title_text, diffs: @unapproved_diffs_excluding_new_or_removed_tests, show_approver: false, panel_class: "panel-warning", panel_id: "diffs_images"} %>
 <% end %>
 
-<% if @new_tests.size > 0 %>
-  <%= render partial: 'layouts/test_images_panel', locals: {title: "#{pluralize(@new_tests.size, 'new test')} added", images: @new_tests, panel_class: "panel-success", panel_id: "new_images"} %>
+<% if @unapproved_removed_tests.size > 0 %>
+  <%= render partial: 'layouts/test_images_panel', locals: {title: "#{pluralize(@unapproved_removed_tests.size, 'removed test')} waiting for approval", images: @unapproved_removed_tests, panel_class: "panel-warning", panel_id: "removed_images"} %>
 <% end %>
 
-<% if @approved_diffs.size > 0 %>
-  <%= render partial: 'layouts/diffs_panel', locals: {title: "#{pluralize(@approved_diffs.size, 'diff')} approved", diffs: @approved_diffs, show_approver: true, panel_class: "panel-success", panel_id: "approved_images"} %>
+<% if @unapproved_new_tests.size > 0 %>
+  <%= render partial: 'layouts/test_images_panel', locals: {title: "#{pluralize(@unapproved_new_tests.size, 'new test')} waiting for approval", images: @unapproved_new_tests, panel_class: "panel-warning", panel_id: "new_images"} %>
+<% end %>
+
+<% if @approved_diffs_excluding_new_or_removed_tests.size > 0 %>
+  <%= render partial: 'layouts/diffs_panel', locals: {title: "#{pluralize(@approved_diffs_excluding_new_or_removed_tests.size, 'diff')} approved", diffs: @approved_diffs_excluding_new_or_removed_tests, show_approver: true, panel_class: "panel-success", panel_id: "approved_diffs"} %>
+<% end %>
+
+<% if @approved_removed_tests.size > 0 %>
+  <%= render partial: 'layouts/test_images_panel', locals: {title: "#{pluralize(@approved_removed_tests.size, 'removed test')} approved", images: @approved_removed_tests, panel_class: "panel-success", panel_id: "removed_images"} %>
+<% end %>
+
+<% if @approved_new_tests.size > 0 %>
+  <%= render partial: 'layouts/test_images_panel', locals: {title: "#{pluralize(@approved_new_tests.size, 'new test')} approved", images: @approved_new_tests, panel_class: "panel-success", panel_id: "new_images"} %>
 <% end %>
 
 <%= commontator_thread(@build) %>
