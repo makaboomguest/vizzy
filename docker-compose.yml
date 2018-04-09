@@ -2,6 +2,9 @@ version: '3'
 services:
   postgres:
     image: postgres:9.5.3
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
     volumes:
       - data:/var/lib/postgresql/data
   app:
@@ -14,6 +17,7 @@ services:
     environment:
       - RAILS_MASTER_KEY=$RAILS_MASTER_KEY
       - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
       - RAILS_ENV=ci_test
       - HEADLESS=yes
     volumes:
@@ -24,4 +28,3 @@ services:
       - postgres
 volumes:
   data:
-    external: true

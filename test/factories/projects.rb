@@ -53,7 +53,6 @@ end
 
 FactoryBot.define do
   factory :project do
-    id 1
     name 'Testing'
     description 'A Testing Plan'
     github_root_url SystemTestConfig.github_root_url
