@@ -53,7 +53,7 @@ Add secrets to the yaml file by running the following command: *Note*: you may s
 ```
 EDITOR=vi bin/rails secrets:edit
 ```
-If you see an error `Devise.secret_key was not set` you will have to add the sample secret_key to [devise.rb](/config/intitializers/devise.rb), run the setup/edit, then remove the Devise.secret_key. Devise now uses the project secret_key_base.
+If you see an error `Devise.secret_key was not set` you will have to add the sample secret_key to [devise.rb](/config/initializers/devise.rb), run the setup/edit, then remove the Devise.secret_key. Devise now uses the project secret_key_base.
 
 Here are the possible secrets:
 
@@ -95,7 +95,7 @@ To generate new instances of `secret_key_base` run `rake secret` 4 times and cop
 ### Configure Authentication Type
 To configure open [vizzy.yaml](config/vizzy.yaml)
 
-For local authentication with user registration, change the devise auth strategy to local.
+For local authentication with user registration, no setup is required. The default auth strategy is local.
 ```yaml
 defaults: &default
   devise:
@@ -124,7 +124,7 @@ From the Vizzy project directory run
 
 Vizzy projects allow you to run visual automation on multiple branches (ex. Master, Develop), each branch represented by a project. Each project has its own set of base images. There is typically a one to one mapping of a build plan to a Vizzy project. NOTE: Pull Requests opened against the master branch should be uploaded to the master Vizzy project so the correct set of base images are used to calculated the diffs.  
 
-To create a test project for development, I recommend seeding the database. Vizzy uses [FactoryBot](https://github.com/thoughtbot/factory_bot) to add test data. Add your github information (required) as well as plugin settings (optional) to the project factory [project.rb](test/factories/projects.rb).
+To create a test project for development, I recommend seeding the database. Vizzy uses [FactoryBot](https://github.com/thoughtbot/factory_bot) to add test data. Add your Github information (required) as well as plugin settings (optional) to the project factory [project.rb](test/factories/projects.rb).
 
 Then run `rake db:reset` which will clear the database, run the migrations, and populate the database with the test data in [seeds.rb](db/seeds.rb)(sample user and project). You could also achieve this by running `rake db:seed` if you don't want to clear the database.
 
@@ -157,7 +157,9 @@ Here is a sample run config for Master 1:
 
 This server is docker ready and can be deployed with any tool you want.
 
-- [Dockerfile](Dockerfile): Builds dependencies, adds the source code, precompiles the assets, and exposes port 3000. 
+- [Dockerfile](Dockerfile): Builds dependencies, adds the source code, precompiles the assets, and exposes port 3000.
+
+Travis CI publishes the latest master image to [Docker Hub](https://hub.docker.com/r/scottcbishop/vizzy/)
 
 We recommend a tool called [Kubernetes](https://kubernetes.io/docs/home/) (k8s), an opened sourced container cluster manager originally designed by Google, now owned by Cloud Native Computing. This tool aims to 
 provide a platform for automating deployment, scaling, and operations of application containers across clusters of hosts.
@@ -253,6 +255,11 @@ VISUAL_HOST=https://vizzy.com
     ruby ./upload_images_to_server.rb fail "$VISUAL_HOST" --message "Build Failed!" --file ./visual-build-info --user-email "$VIZZY_USER_EMAIL" --user-token "$VIZZY_USER_TOKEN"
 ```
 
+### Disable squash merging
+Squashing your commits when merging a pull request will break pre-approvals. This is because Vizzy uses the commit sha of the pull request and stores it with each image approval. Squash and merge will create a NEW merge commit and remove the commit sha that was used for approvals.
+
+To disable this setting, go to the Github repository settings, and uncheck `Allow squash merging`
+
 ### Non-Deterministic Challenges
 Turn off Animations for test suites: taking screenshots of animations does not always capture the same image which will cause visual diffs. 
 
@@ -266,6 +273,10 @@ Unit tests are run with the command
 In order to run System tests, fill out the system test encrypted secrets. System tests are run with the command
  
 ```rails test:system```
+
+## Slack Workspace
+Join the developer community
+https://join.slack.com/t/vizzy-dev/shared_invite/enQtMzQxMzI4MjE5MTA3LTNmM2U5MzgzN2U4NzIxZTMzNDI2ZjE5ZDNmNTBhYzUxYzFiMGIzNjE0YWNiYjRlZjhhNWM5YjAzOGViNDA5YzQ
 
 ## Contributing
 
