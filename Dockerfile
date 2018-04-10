@@ -35,7 +35,7 @@ COPY . /app
 # add encription key to decode secrets
 ARG RAILS_MASTER_KEY
 
-RUN rake assets:precompile
+RUN echo "RAILS_ENV: $RAILS_ENV" && rake assets:precompile RAILS_ENV=$RAILS_ENV
 
 EXPOSE 3000
 CMD ["rails", "server", "-b", "0.0.0.0"]
