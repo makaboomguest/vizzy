@@ -1,0 +1,20 @@
+{
+  "name": "Vizzy Sample",
+  "description": "A powerful Ruby on Rails web server that facilitates Visual Automation.",
+  "repository": "https://github.com/Workday/vizzy",
+  "logo": "https://github.com/Workday/vizzy/blob/master/app/assets/images/vizzy-logo.svg",
+  "keywords": [
+    "ruby",
+    "postgres"
+  ],
+  "addons": {
+    "plan": "heroku-postgresql",
+    "options": {
+      "version": "9.5"
+    }
+  },
+  "image": "heroku/ruby",
+  "scripts": {
+    "postdeploy": "bundle exec rake db:migrate"
+  }
+}
